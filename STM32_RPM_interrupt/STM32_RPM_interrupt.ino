@@ -8,10 +8,10 @@ Servo esc1;
 Servo esc2;
 int uplim=2000;//<------
 int lowlim=1005;
-int thrust2=420;//upper limit
-int thrust=420;//in rpm lower limit
-int startpoint1=1500,m1=1700;
-int startpoint2=1500,m2=1700;
+int thrust2=330;//upper limit
+int thrust=330;//in rpm lower limit
+int startpoint1=1300,m1=1350;
+int startpoint2=1300,m2=1350;
 int in3 = PB13;
 
 volatile unsigned long firstPulseTime1;
@@ -126,11 +126,8 @@ esc2.writeMicroseconds(m2);
 else{
   esc1.writeMicroseconds(1000);
 esc2.writeMicroseconds(1000);
-if(m1>=1700){
-m1=m1-200;}
-
-if(m2>=1700){
-m2=m2-200;}
+m1=1400;
+m2=1400;
 }
 
 if (m1>=uplim || m2>=uplim){
