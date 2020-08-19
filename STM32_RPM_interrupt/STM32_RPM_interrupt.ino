@@ -8,8 +8,8 @@ Servo esc1;
 Servo esc2;
 int uplim=2000;//<------
 int lowlim=1005;
-int thrust2=330;//upper limit
-int thrust=330;//in rpm lower limit
+int thrust2=337;//upper limit
+int thrust=332;//in rpm lower limit
 int startpoint1=1300,m1=1350;
 int startpoint2=1300,m2=1350;
 int in3 = PB13;
@@ -89,8 +89,8 @@ float readFrequency2(unsigned int sampleTime2)
 
 
 void loop(){
- freq1 = readFrequency1(100);
- freq2 = readFrequency2(100);
+ freq1 = readFrequency1(100);//pauses 100ms
+ freq2 = readFrequency2(100);//pauses 100ms
 
  if (digitalRead(in3)==1){
 
@@ -126,8 +126,8 @@ esc2.writeMicroseconds(m2);
 else{
   esc1.writeMicroseconds(1000);
 esc2.writeMicroseconds(1000);
-m1=1400;
-m2=1400;
+m1=startpoint1;
+m2=startpoint2;
 }
 
 if (m1>=uplim || m2>=uplim){
@@ -167,7 +167,7 @@ else if(freq1 <thrust && freq2>=thrust){
   digitalWrite(PC15,LOW);
 }
 
-else if(freq1 >=thrust && freq2>thrust){
+else if(freq1 >=thrust && freq2<thrust){
   digitalWrite(PC13,LOW);
   digitalWrite(PC14,LOW);
   digitalWrite(PC15,HIGH);
