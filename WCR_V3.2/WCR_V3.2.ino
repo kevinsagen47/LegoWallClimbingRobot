@@ -10,6 +10,7 @@ int pos1=0,pos2=110,pos3=90,pos4=0,pos5=0;
 unsigned long time1,time2,time3,time4,time5;
 RF24 radio(PA3, PA4);   // nRF24L01 (CE, CSN)PB13,PB12 PB0, PA4
 const byte address[6] = "00001";
+const byte sendaddress[6] = "11011";
 unsigned long lastReceiveTime = 0;
 unsigned long currentTime = 0;
 unsigned long addtime,looptime, delaym;
@@ -19,7 +20,7 @@ long ffreq1,ffreq2,timerr1,timerr2;
 
 int flag1,flag2;
 // Max size of this struct is 32 bytes - NRF24L01 buffer limit
-
+int freetimeint;
 int uplim=1200;//<------!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 int lowlim=1013;
 int thrust2=45;//upper limit      <------------------------
@@ -31,6 +32,25 @@ int startpoint2=1005,m2=1005;//<---------------------
 float freq;
 long freq1;long freq2;
 int mode=0;
+
+
+long freetime;
+
+struct Send_Package {
+  short bat1;
+  short bat2;
+  short freq1;//l1
+  short freq2;
+  short m1;
+  short m2;
+  byte stat;
+
+};
+Send_Package Send;
+
+
+
+
 
 struct Data_Package {
   short Lx;
@@ -91,13 +111,12 @@ void setup() {
   Timer1.getCompare(TIMER_CH1); // clear capture flag
   Timer1.getCompare(TIMER_CH2); // clear capture flag
   Timer1.resume(); // let timer 2 run
-  SPI.begin();
-  SPI.setDataMode(SPI_MODE0);
-  SPI.setBitOrder(MSBFIRST);
+ 
   Serial.begin(115200);
   radio.begin();
-  radio.openReadingPipe(0, address);
-  radio.setAutoAck(false);
+  radio.openReadingPipe(1, address);
+  radio.openWritingPipe(sendaddress);
+  //radio.setAutoAck(false);
   radio.setDataRate(RF24_250KBPS);
   radio.setPALevel(RF24_PA_LOW);
   radio.startListening(); //  Set the module as receiver
@@ -119,6 +138,8 @@ void setup() {
 }
 void loop() {
   // Check whether there is data to be received
+  freetime=millis();
+  while (!radio.available()&&millis()-freetime<=100);//
   if (radio.available()) {
     radio.read(&data, sizeof(Data_Package)); // Read the whole data and store it into the 'data' structure
     lastReceiveTime = millis(); // At this moment we have received the data
@@ -131,14 +152,21 @@ void loop() {
   Serial.println("COnnection Lost");
 
   }
-
+  
   legomotor();
   calculatefreq();
   mainmotor();
-
-
-
-
+  radio.stopListening();
+  Send.freq1=(short)freq1;
+  Send.freq2=(short)freq2;
+  Send.m1=m1-1000;
+  Send.m2=m2-1000;
+  Send.bat1=(short)map(analogRead(PA11),0,3903,0,1680);
+  Send.bat2=(short)map(analogRead(PA12),0,3903,0,1680);
+  Send.stat=startstop;
+  radio.write(&Send, sizeof(Send_Package));
+  radio.startListening();
+  /*
 Serial.print("Rx: ");
   Serial.print(data.Rx);
   Serial.print("; Ly: ");
@@ -149,16 +177,17 @@ Serial.print("Rx: ");
   Serial.print(data.Ly);
   Serial.print("; button3: ");
   Serial.println(data.b3);
-/*
+  */
+
   Serial.print("M1: ");
- Serial.print(freq1);
+ Serial.print(Send.freq1);
   Serial.print(" p1: ");
  Serial.print(m1);
  Serial.print(" M2: ");
- Serial.print(freq2);
+ Serial.print(Send.freq2);
  Serial.print(" p2: ");
  Serial.println(m2);
-*/
+
 if(startstop){
 if(freq1 <thrust && freq2<thrust){
   digitalWrite(PC13,LOW);
