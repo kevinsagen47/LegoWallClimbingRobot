@@ -9,13 +9,14 @@ int delayt=8,mspeed=30000,sswitch=0,ledb=30000,switchdff;//65535max
 int pos1=0,pos2=110,pos3=90,pos4=0,pos5=0;
 unsigned long time1,time2,time3,time4,time5;
 RF24 radio(PA3, PA4);   // nRF24L01 (CE, CSN)PB13,PB12 PB0, PA4
-const byte address[6] = "00001";
+const byte address[6] = "00100";//new rc
 const byte sendaddress[6] = "11011";
 unsigned long lastReceiveTime = 0;
 unsigned long currentTime = 0;
 unsigned long addtime,looptime, delaym;
 int startstop=0;
 int delaymv=200;
+int bat1,bat2;
 long ffreq1,ffreq2,timerr1,timerr2;
 
 int flag1,flag2;
@@ -53,20 +54,11 @@ Send_Package Send;
 
 
 struct Data_Package {
-  short Lx;
-  short Ly;
-  short Rx;
-  short Ry;
+  short x;
+  short y;
   byte b0;//l1
-  byte b1;
-  byte b2;
-  byte b3;
-  byte b4;
-  byte b5;
-  byte b6;//start
-  byte b7;//analog
-  byte b8;//select
-  byte bA1;//R0
+  byte throttle;
+
 };
 Data_Package data; //Create a variable with the above structure
 void setup() {
@@ -139,7 +131,7 @@ void setup() {
 void loop() {
   // Check whether there is data to be received
   freetime=millis();
-  while (!radio.available()&& millis()-freetime<=100);//&&millis()-freetime<=100  if (radio.available()) {
+  while (!radio.available()&&millis()-freetime<=100);//
   if (radio.available()) {
     radio.read(&data, sizeof(Data_Package)); // Read the whole data and store it into the 'data' structure
     lastReceiveTime = millis(); // At this moment we have received the data
@@ -161,24 +153,24 @@ void loop() {
   Send.freq2=(short)freq2;
   Send.m1=m1-1000;
   Send.m2=m2-1000;
-  Send.bat1=(short)map(analogRead(PA11),0,3903,0,1680);
-  Send.bat2=(short)map(analogRead(PA12),0,3903,0,1680);
+  bat1=analogRead(PA9);
+  bat2=analogRead(PA10);
+  Send.bat1=(short)map(bat1,0,3903,0,1680);
+  Send.bat2=(short)map(bat2,0,3903,0,1680);
   Send.stat=startstop;
   radio.write(&Send, sizeof(Send_Package));
   radio.startListening();
-  /*
-Serial.print("Rx: ");
-  Serial.print(data.Rx);
-  Serial.print("; Ly: ");
-  Serial.print(data.Ry);
-  Serial.print("Lx: ");
-  Serial.print(data.Lx);
-  Serial.print("; Ly: ");
-  Serial.print(data.Ly);
-  Serial.print("; button3: ");
-  Serial.println(data.b3);
-  */
-
+  
+Serial.print("x: ");
+  Serial.print(data.x);
+  Serial.print("; y: ");
+  Serial.print(data.y);
+  Serial.print("; button0: ");
+  Serial.println(data.b0);
+  Serial.print("; throttle: ");
+  Serial.println(data.throttle);
+  
+/*
   Serial.print("M1: ");
  Serial.print(Send.freq1);
   Serial.print(" p1: ");
@@ -187,7 +179,9 @@ Serial.print("Rx: ");
  Serial.print(Send.freq2);
  Serial.print(" p2: ");
  Serial.println(m2);
-
+ */
+  thrust=data.throttle;
+  thrust2=data.throttle+5;
 if(startstop){
 if(freq1 <thrust && freq2<thrust){
   digitalWrite(PC13,LOW);
@@ -211,42 +205,45 @@ else
 void legomotor(){
 
   
-  if(data.Ry>1520){
+  if(data.x<1480){
+  digitalWrite(PB6,LOW);
   digitalWrite(PB7,HIGH);
-  digitalWrite(PB6,LOW);
-}
-else if(data.Ry<1480){
-  digitalWrite(PB7,LOW);
+  digitalWrite(PB8,LOW);
+  digitalWrite(PB9,HIGH);}
+else if(data.x>1520){
   digitalWrite(PB6,HIGH);
-  Serial.println("true");
-}
-
-else{
-  digitalWrite(PB6,LOW);
   digitalWrite(PB7,LOW);
-}
-
-
-if(data.Ly>1520){
   digitalWrite(PB8,HIGH);
   digitalWrite(PB9,LOW);
 }
-else if(data.Ly<1480){
+else if(data.y<1480){
+  digitalWrite(PB6,HIGH);
+  digitalWrite(PB7,LOW);
   digitalWrite(PB8,LOW);
   digitalWrite(PB9,HIGH);
 }
+else if(data.y>1520){
+  digitalWrite(PB6,LOW);
+  digitalWrite(PB7,HIGH);
+  digitalWrite(PB8,HIGH);
+  digitalWrite(PB9,LOW);
+}
 
 else{
-  digitalWrite(PB9,LOW);
+  digitalWrite(PB6,LOW);
+  digitalWrite(PB7,LOW);
   digitalWrite(PB8,LOW);
+  digitalWrite(PB9,LOW);
 }
+
+
 }
 
 void mainmotor(){
 
 if(millis()-delaym>=delaymv){
-if(data.b3==1)startstop=1;
-if(data.b2==1)startstop=0;
+if(data.b0==1)startstop=1;
+if(data.b0==0)startstop=0;
 
 
   
@@ -319,18 +316,16 @@ else freq1=0;
 
 void resetData() {
   // Reset the values when there is no radio connection - Set initial default values
-  data.Lx = 1500; // Values from 0 to 255. When Joystick is in resting position, the value is in the middle, or 127. We actually map the pot value from 0 to 1023 to 0 to 255 because that's one BYTE value
-  data.Ly = 1500;
-  data.Rx = 1500;
-  data.Ry = 1500;
+  data.x = 1500; // Values from 0 to 255. When Joystick is in resting position, the value is in the middle, or 127. We actually map the pot value from 0 to 1023 to 0 to 255 because that's one BYTE value
+  data.y = 1500;
   data.b0 = 0;
-  data.b1 = 0;
-  data.b2 = 1;
-  data.b3 = 0;
-  data.b4 = 0;
-  data.b5 = 0;
-  data.b6 = 0;
-  data.b7 = 0;
-  data.b8 = 0;
-  data.bA1 = 0;
+  data.throttle=40;
 }
+/*
+  short Lx;
+  short Ly;
+  short Rx;
+  short Ry;
+  byte b0;//l1
+
+*/
