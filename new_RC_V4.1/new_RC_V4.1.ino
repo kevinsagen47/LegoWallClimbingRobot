@@ -72,8 +72,11 @@ lcd.print(" Remote Controller ");
 void loop() {
     radio.startListening();
   // Check whether there is data to be received
-  freetime=millis();
-  while (!radio.available()&&millis()-freetime<=100);//
+    unsigned long started_waiting_at = millis();
+    bool timeout = false;
+    while ( ! radio.available() && ! timeout )
+      if (millis() - started_waiting_at > 500 )
+        timeout = true;
   if (radio.available()) {
     radio.read(&Send, sizeof(Send_Package)); // Read the whole data and store it into the 'data' structure
     lastReceiveTime = millis(); // At this moment we have received the data
