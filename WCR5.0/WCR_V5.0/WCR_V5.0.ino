@@ -2,7 +2,7 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 #include <Servo.h>
-
+//scooped from WCR 3.2
 Servo esc1;
 Servo esc2;
 int delayt=8,mspeed=30000,sswitch=0,ledb=30000,switchdff;//65535max
@@ -17,7 +17,8 @@ unsigned long addtime,looptime, delaym;
 int startstop=0;
 int delaymv=200;
 long ffreq1,ffreq2,timerr1,timerr2;
-
+unsigned long thrtime=0;
+unsigned long thrtime2=0;
 int flag1,flag2;
 // Max size of this struct is 32 bytes - NRF24L01 buffer limit
 int freetimeint;
@@ -44,7 +45,7 @@ struct Send_Package {
   short m1;
   short m2;
   byte stat;
-
+  short throttle;
 };
 Send_Package Send;
 
@@ -116,7 +117,7 @@ void setup() {
   radio.begin();
   radio.openReadingPipe(1, address);
   radio.openWritingPipe(sendaddress);
-  //radio.setAutoAck(false);
+  radio.setAutoAck(false);
   radio.setDataRate(RF24_250KBPS);
   radio.setPALevel(RF24_PA_LOW);
   radio.startListening(); //  Set the module as receiver
@@ -138,11 +139,15 @@ void setup() {
 }
 void loop() {
   // Check whether there is data to be received
-  freetime=millis();
-  while (!radio.available()&& millis()-freetime<=100);//&&millis()-freetime<=100  if (radio.available()) {
+    unsigned long started_waiting_at = millis();
+    bool timeout = false;
+    while ( ! radio.available() && ! timeout )
+      if (millis() - started_waiting_at > 100 )
+        timeout = true;
   if (radio.available()) {
     radio.read(&data, sizeof(Data_Package)); // Read the whole data and store it into the 'data' structure
     lastReceiveTime = millis(); // At this moment we have received the data
+  digitalWrite(PC15,LOW);
   }
   // Check whether we keep receving data, or we have a connection between the two modules
   currentTime = millis();
@@ -150,7 +155,7 @@ void loop() {
   if ( currentTime - lastReceiveTime > 1000 ) { // If current time is more then 1 second since we have recived the last data, that means we have lost connection
     resetData(); // If connection is lost, reset the data. It prevents unwanted behavior, for example if a drone has a throttle up and we lose connection, it can keep flying unless we reset the values
   Serial.println("COnnection Lost");
-
+  digitalWrite(PC15,HIGH);
   }
   
   legomotor();
@@ -161,9 +166,10 @@ void loop() {
   Send.freq2=(short)freq2;
   Send.m1=m1-1000;
   Send.m2=m2-1000;
-  Send.bat1=(short)map(analogRead(PA11),0,3903,0,1680);
-  Send.bat2=(short)map(analogRead(PA12),0,3903,0,1680);
+  Send.bat1=(short)map(analogRead(PA9),0,3903,0,1680);
+  Send.bat2=(short)map(analogRead(PA10),0,3903,0,1680);
   Send.stat=startstop;
+  Send.throttle=thrust;
   radio.write(&Send, sizeof(Send_Package));
   radio.startListening();
   /*
@@ -186,7 +192,11 @@ Serial.print("Rx: ");
  Serial.print(" M2: ");
  Serial.print(Send.freq2);
  Serial.print(" p2: ");
- Serial.println(m2);
+ Serial.print(m2);
+ Serial.print(" bat1: ");
+ Serial.print(analogRead(PA9));
+ Serial.print(" bat2: ");
+ Serial.println(analogRead(PA10));
 
 if(startstop){
 if(freq1 <thrust && freq2<thrust){
@@ -203,6 +213,27 @@ else
     digitalWrite(PC13,LOW);
   digitalWrite(PC14,LOW);
 }
+
+
+
+
+if(data.b2==1){
+  if(millis()-thrtime>200){
+    thrust=thrust+2;
+    thrust2=thrust2+2;
+    thrtime=millis();
+  }
+}
+else thrtime=millis();
+
+if(data.b4==1){
+  if(millis()-thrtime2>200){
+    thrust=thrust-2;
+    thrust2=thrust2-2;
+    thrtime2=millis();
+  }
+}
+else thrtime2=millis();
 
 }
 
@@ -246,7 +277,7 @@ void mainmotor(){
 
 if(millis()-delaym>=delaymv){
 if(data.b3==1)startstop=1;
-if(data.b2==1)startstop=0;
+if(data.b5==1)startstop=0;
 
 
   
@@ -294,6 +325,10 @@ esc2.writeMicroseconds(1000);
 digitalWrite(PC15,HIGH);
 digitalWrite(PC14,HIGH);
 digitalWrite(PC13,HIGH);
+delay(3000);
+digitalWrite(PC15,LOW);
+digitalWrite(PC14,LOW);
+digitalWrite(PC13,LOW);
 Serial.println("!!!!!!!!!!!!!!!!!!!!!!!!!");
 startstop=0;
 }
@@ -304,14 +339,14 @@ delaym=millis();}
 void calculatefreq(){
  if(Timer2.getInputCaptureFlag(TIMER_CH1))
 {timerr1=millis();flag1=0;}
-if(millis()-timerr1>1000)flag1=1;
+if(millis()-timerr1>100)flag1=1;
 ffreq2=1000000/Timer2.getCompare(TIMER_CH1);
 if(flag1==0)freq2=ffreq2;
 else freq2=0;
 
 if(Timer1.getInputCaptureFlag(TIMER_CH1))
 {timerr2=millis();flag2=0;}
-if(millis()-timerr2>1000)flag2=1;
+if(millis()-timerr2>100)flag2=1;
 ffreq1=1000000/Timer1.getCompare(TIMER_CH1);
 if(flag2==0)freq1=ffreq1;
 else freq1=0;

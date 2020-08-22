@@ -33,7 +33,7 @@ struct Send_Package {
   short m1;
   short m2;
   byte stat;
-
+  short throttle;
 };
 Send_Package Send; //Create a variable with the above structure
 struct Data_Package {
@@ -68,6 +68,25 @@ lcd.setCursor(0,0);
 lcd.print("Wall Climbing Rob");
 lcd.setCursor(0,1);
 lcd.print(" Remote Controller ");
+delay(50);
+
+
+  lcd.setCursor(0,0);
+  lcd.print("                    ");
+  lcd.setCursor(0,0);
+  lcd.print(Send.m1);
+  lcd.setCursor(5,0);
+  lcd.print(Send.m2);
+  lcd.setCursor(10,0);
+  lcd.print(Send.stat);
+  lcd.setCursor(0,1);
+  lcd.print("                    ");
+  lcd.setCursor(0,1);
+  lcd.print(Send.freq1);
+  lcd.setCursor(5,1);
+  lcd.print(Send.freq2);
+  lcd.setCursor(10,1);
+  lcd.print(data.throttle);
 }
 void loop() {
     radio.startListening();
@@ -116,6 +135,7 @@ void loop() {
    data.throttle=counter;
   // lcd.clear();
  lcd.setCursor(10,1);
+ lcd.print("   ");
   lcd.print(data.throttle);
    radio.write(&data, sizeof(Data_Package));
  }
@@ -128,7 +148,7 @@ if(lcdcount==1){
   lcd.setCursor(5,0);
   lcd.print(Send.m2);
   lcd.setCursor(10,0);
-  lcd.print(digitalRead(PB9));
+  lcd.print(Send.stat);
   lcdcount=2;
 }
   else{
@@ -139,22 +159,9 @@ if(lcdcount==1){
   lcd.setCursor(5,1);
   lcd.print(Send.freq2);
   lcd.setCursor(10,1);
-  lcd.print(data.throttle);
+  lcd.print(Send.throttle);
   lcdcount=1;}
-  /*
-  short roll_angle;
-  short pitch_angle;
-  short bat1;
-  short bat2;
-  byte rssi;
-  byte flight_mode;
-  byte altitude_meters;
-  byte error;
-  byte number_used_sats;
-  int l_lat_gps;
-  int l_lon_gps;
-  byte start;
-   */
+
   // Print the data in the Serial Monitor
   Serial.print("bat1: ");
   Serial.print(Send.bat1);
