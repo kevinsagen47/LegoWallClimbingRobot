@@ -20,12 +20,12 @@ long ffreq1,ffreq2,timerr1,timerr2;
 int flag1,flag2;
 // Max size of this struct is 32 bytes - NRF24L01 buffer limit
 
-int uplim=1200;//<------!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+int uplim=2000;//<------!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 int lowlim=1013;
-int thrust2=45;//upper limit      <------------------------
-int thrust=40;//in rpm lower limit<------------------------
-int startpoint1=1005,m1=1005;//<---------------------
-int startpoint2=1005,m2=1005;//<---------------------
+int thrust2=355;//upper limit      <------------------------
+int thrust=350;//in rpm lower limit<------------------------
+int startpoint1=1405,m1=1405;//<---------------------
+int startpoint2=1405,m2=1405;//<---------------------
 //int in3 = PB13;
 
 float freq;
@@ -137,7 +137,7 @@ void loop() {
   mainmotor();
 
 
-
+/*
 
 Serial.print("Rx: ");
   Serial.print(data.Rx);
@@ -149,7 +149,8 @@ Serial.print("Rx: ");
   Serial.print(data.Ly);
   Serial.print("; button3: ");
   Serial.println(data.b3);
-/*
+  */
+
   Serial.print("M1: ");
  Serial.print(freq1);
   Serial.print(" p1: ");
@@ -158,7 +159,7 @@ Serial.print("Rx: ");
  Serial.print(freq2);
  Serial.print(" p2: ");
  Serial.println(m2);
-*/
+
 if(startstop){
 if(freq1 <thrust && freq2<thrust){
   digitalWrite(PC13,LOW);

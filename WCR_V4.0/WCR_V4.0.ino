@@ -22,12 +22,12 @@ long ffreq1,ffreq2,timerr1,timerr2;
 int flag1,flag2;
 // Max size of this struct is 32 bytes - NRF24L01 buffer limit
 int freetimeint;
-int uplim=1200;//<------!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+int uplim=2000;//<------!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 int lowlim=1013;
-int thrust2=45;//upper limit      <------------------------
-int thrust=40;//in rpm lower limit<------------------------
-int startpoint1=1005,m1=1005;//<---------------------
-int startpoint2=1005,m2=1005;//<---------------------
+int thrust2=105;//upper limit      <------------------------
+int thrust=100;//in rpm lower limit<------------------------
+int startpoint1=1205,m1=1205;//<---------------------
+int startpoint2=1205,m2=1205;//<---------------------
 //int in3 = PB13;
 
 float freq;

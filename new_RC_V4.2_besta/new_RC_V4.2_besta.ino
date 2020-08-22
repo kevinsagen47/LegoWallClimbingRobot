@@ -68,10 +68,11 @@ lcd.setCursor(0,0);
 lcd.print("Wall Climbing Rob");
 lcd.setCursor(0,1);
 lcd.print(" Remote Controller ");
+delay(100);
+lcd.clear();
 }
 void loop() {
     radio.startListening();
-  // Check whether there is data to be received
     unsigned long started_waiting_at = millis();
     bool timeout = false;
     while ( ! radio.available() && ! timeout )
@@ -120,27 +121,45 @@ void loop() {
    radio.write(&data, sizeof(Data_Package));
  }
  //lcd.clear();
-if(lcdcount==1){
-  lcd.setCursor(0,0);
-  lcd.print("                    ");
-  lcd.setCursor(0,0);
-  lcd.print(Send.m1);
-  lcd.setCursor(5,0);
-  lcd.print(Send.m2);
-  lcd.setCursor(10,0);
-  lcd.print(digitalRead(PB9));
-  lcdcount=2;
-}
-  else{
-  lcd.setCursor(0,1);
-  lcd.print("                    ");
-  lcd.setCursor(0,1);
-  lcd.print(Send.freq1);
-  lcd.setCursor(5,1);
-  lcd.print(Send.freq2);
+ if(lcdcount==1){
+      prev1=Send.m1;
+      lcd.setCursor(0,0);
+      lcd.print("   ");
+      lcd.print(Send.m1);}
+  else  if(lcdcount==2){
+      prev2=Send.m2;
+      lcd.setCursor(5,0);
+      lcd.print("   ");
+      lcd.print(Send.m2);}  
+  else  if(lcdcount==3){
+      prev3=digitalRead(PB9);
+      lcd.setCursor(10,0);
+      lcd.print("   ");
+      lcd.print(digitalRead(PB9));} 
+  else  if(lcdcount==4){
+      prev4=Send.freq1;
+      lcd.setCursor(0,1);
+      lcd.print("   ");
+      lcd.print(Send.freq1);}
+   else  if(lcdcount==5){
+      prev5=Send.freq2;
+      lcd.setCursor(5,1);
+      lcd.print("   ");
+      lcd.print(Send.freq2);}
+   else {
+      lcdcount=0;
+      prev6=data.throttle;
+      lcd.setCursor(10,1);
+      lcd.print("   ");
+      lcd.print(data.throttle);}
+  
+  lcdcount++;
+
+
+  /*
   lcd.setCursor(10,1);
   lcd.print(data.throttle);
-  lcdcount=1;}
+  */
   /*
   short roll_angle;
   short pitch_angle;
